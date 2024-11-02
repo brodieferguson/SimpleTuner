@@ -284,52 +284,6 @@ def prepare_validation_prompt_list(args, embed_cache):
             raise ValueError(f"Unknown model type '{model_type}'")
 
 
-def parse_validation_resolution(input_str: str) -> tuple:
-    """
-    If the args.validation_resolution:
-     - is an int, we'll treat it as height and width square aspect
-     - if it has an x in it, we will split and treat as WIDTHxHEIGHT
-     - if it has comma, we will split and treat each value as above
-    """
-    if isinstance(input_str, int) or input_str.isdigit():
-        if (
-            "deepfloyd-stage2" in StateTracker.get_args().model_type
-            and int(input_str) < 256
-        ):
-            raise ValueError(
-                "Cannot use less than 256 resolution for DeepFloyd stage 2."
-            )
-        return (input_str, input_str)
-    if "x" in input_str:
-        pieces = input_str.split("x")
-        if "deepfloyd-stage2" in StateTracker.get_args().model_type and (
-            int(pieces[0]) < 256 or int(pieces[1]) < 256
-        ):
-            raise ValueError(
-                "Cannot use less than 256 resolution for DeepFloyd stage 2."
-            )
-        return (int(pieces[0]), int(pieces[1]))
-
-
-def get_validation_resolutions():
-    """
-    If the args.validation_resolution:
-     - is an int, we'll treat it as height and width square aspect
-     - if it has an x in it, we will split and treat as WIDTHxHEIGHT
-     - if it has comma, we will split and treat each value as above
-    """
-    validation_resolution_parameter = StateTracker.get_args().validation_resolution
-    if (
-        type(validation_resolution_parameter) is str
-        and "," in validation_resolution_parameter
-    ):
-        return [
-            parse_validation_resolution(res)
-            for res in validation_resolution_parameter.split(",")
-        ]
-    return [parse_validation_resolution(validation_resolution_parameter)]
-
-
 def get_validation_resolutions():
     """
     If the args.validation_resolution:
@@ -905,7 +859,7 @@ class Validation:
         )
         is_final_validation = validation_type == "final"
         return (is_final_validation or should_do_intermediary_validation) and (
-            self.accelerator.is_main_process or self.deepseed
+            self.accelerator.is_main_process or self.deepspeed
         )
 
     def setup_scheduler(self):
